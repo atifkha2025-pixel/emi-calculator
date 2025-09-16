@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💰 EMI & Loan Tracker - Interactive Amortization Schedule</title>
+<meta name="description" content="Interactive EMI calculator with month-wise amortization schedule. Track your loan easily, see principal & interest paid, and remaining balance like a bank.">
+<meta name="keywords" content="EMI calculator, loan tracker, amortization schedule, monthly EMI, principal interest breakdown, loan payment tracker">
+<meta name="author" content="Atif Kha">
+<meta name="robots" content="index, follow">
+
+<!-- Open Graph Tags for social sharing -->
+<meta property="og:title" content="💰 EMI & Loan Tracker - Interactive Amortization Schedule">
+<meta property="og:description" content="Track your loan easily with our EMI calculator. See month-wise principal, interest, and remaining balance.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://atifkha2025-pixel.github.io/emi-loan-tracker/">
+
+<!-- Structured Data for SEO -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FinancialProduct",
+  "name": "EMI & Loan Tracker",
+  "description": "Interactive EMI calculator with month-wise breakdown of principal and interest. Track your loan easily.",
+  "url": "https://atifkha2025-pixel.github.io/emi-loan-tracker/",
+  "keywords": "EMI calculator, loan tracker, amortization schedule, monthly EMI, principal interest breakdown",
+  "provider": {
+    "@type": "Organization",
+    "name": "Atif Kha"
+  }
+}
+</script>
+
+<style>
+body { font-family: 'Segoe UI', sans-serif; background:#e0f7fa; margin:0; display:flex; justify-content:center; padding:30px 10px;}
+.card { background:white; border-radius:20px; padding:30px; width:520px; max-width:100%; box-shadow:0 16px 40px rgba(0,0,0,0.2); transition:0.3s; }
+.card:hover { transform: scale(1.02); }
+h1, h2 { text-align:center; color:#00796b; margin-bottom:20px; }
+input[type=number] { padding:12px; width:100%; margin:8px 0; border-radius:12px; border:1px solid #b2dfdb; font-size:16px; transition:0.2s; }
+input[type=number]:focus { border-color:#004d40; box-shadow:0 0 8px rgba(0,77,64,0.3);}
+button { padding:14px; width:100%; border:none; border-radius:12px; font-weight:bold; background:#00796b; color:white; cursor:pointer; font-size:16px; margin-top:12px; transition:0.3s; }
+button:hover { background:#004d40; transform: scale(1.03);}
+.result, .schedule { margin-top:20px; padding:20px; border-radius:16px; font-size:16px; display:none;}
+.result { background:#b2dfdb; text-align:center; color:#004d40; font-weight:bold; }
+.schedule { background:#e0f2f1; max-height:350px; overflow:auto; border:1px solid #b2dfdb; }
+.schedule table { width:100%; border-collapse:collapse; }
+.schedule th, .schedule td { border:1px solid #b2dfdb; padding:8px; text-align:center; font-size:14px; }
+.schedule th { background:#004d40; color:white; position:sticky; top:0; }
+@media print { button,input{display:none;} }
+</style>
+</head>
+<body>
+
+<div class="card">
+<h1>💰 EMI & Loan Tracker</h1>
+<h2>Interactive Amortization Schedule</h2>
+
+<label>Loan Amount (₹)</label>
+<input type="number" id="loanAmount" placeholder="Enter loan amount">
+
+<label>Interest Rate (%) per year</label>
+<input type="number" id="interestRate" placeholder="Enter interest rate">
+
+<label>Loan Tenure</label>
+<input type="number" id="loanTenure" placeholder="Enter duration">
+<div style="display:flex; justify-content:space-between; font-size:14px; margin-bottom:10px;">
+  <label><input type="radio" name="tenureType" value="months" checked> Months</label>
+  <label><input type="radio" name="tenureType" value="years"> Years</label>
+</div>
+
+<label>Months Paid So Far</label>
+<input type="number" id="monthsPaid" placeholder="e.g., 36 for 3 years">
+
+<button onclick="calculateEMI()">Show Details!</button>
+
+<div class="result" id="emiResult"></div>
+<div class="schedule" id="scheduleTable"></div>
+</div>
+
+<script>
+function calculateEMI() {
+  let P = parseFloat(document.getElementById('loanAmount').value);
+  let annualRate = parseFloat(document.getElementById('interestRate').value);
+  let N = parseFloat(document.getElementById('loanTenure').value);
+  let tenureType = document.querySelector('input[name="tenureType"]:checked').value;
+  let paidMonths = parseInt(document.getElementById('monthsPaid').value) || 0;
+
+  if(isNaN(P)||P<=0||isNaN(annualRate)||annualRate<0||isNaN(N)||N<=0){
+    alert("Please enter valid numbers!");
+    return;
+  }
+
+  let r = annualRate / 12 / 100; 
+  if(tenureType === "years") N = N*12;
+
+  let EMI = (P * r * Math.pow(1+r, N)) / (Math.pow(1+r, N)-1);
+  let balance = P;
+  let totalPaid = 0, totalInterestPaid = 0;
+  let schedule = [];
+
+  for(let i=1; i<=N; i++){
+    let interest = balance*r;
+    let principal = EMI - interest;
+    balance -= principal;
+    if(balance < 0) balance = 0;
+    schedule.push({month:i, EMI, principal, interest, balance});
+    if(i <= paidMonths){
+      totalPaid += EMI;
+      totalInterestPaid += interest;
+    }
+  }
+
+  let remainingBalance = paidMonths > 0 ? schedule[paidMonths-1].balance.toFixed(2) : P.toFixed(2);
+  let totalPaidSoFar = totalPaid.toFixed(2);
+  let interestPaidSoFar = totalInterestPaid.toFixed(2);
+
+  document.getElementById('emiResult').style.display = "block";
+  document.getElementById('scheduleTable').style.display = "block";
+
+  document.getElementById('emiResult').innerHTML = `
+  <p>🟢 Monthly EMI: ₹${EMI.toFixed(2)}</p>
+  <p>💰 Total Paid So Far: ₹${totalPaidSoFar}</p>
+  <p>💸 Interest Paid So Far: ₹${interestPaidSoFar}</p>
+  <p>🏦 Remaining Balance: ₹${remainingBalance}</p>
+  `;
+
+  let tableHTML = `<table><thead><tr>
+  <th>Month</th><th>EMI</th><th>Principal Paid</th><th>Interest Paid</th><th>Balance</th>
+  </tr></thead><tbody>`;
+
+  schedule.forEach(row => {
+    tableHTML += `<tr>
+      <td>${row.month}</td>
+      <td>₹${row.EMI.toFixed(2)}</td>
+      <td>₹${row.principal.toFixed(2)}</td>
+      <td>₹${row.interest.toFixed(2)}</td>
+      <td>₹${row.balance.toFixed(2)}</td>
+    </tr>`;
+  });
+
+  tableHTML += `</tbody></table>`;
+  document.getElementById('scheduleTable').innerHTML = tableHTML;
+}
+</script>
+
+</body>
+</html>
